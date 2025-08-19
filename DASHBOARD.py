@@ -48,7 +48,7 @@ else:
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file)
 
-        # Mendeteksi kolom Latitude, Longitude, Nama
+        # Mendeteksi kolom Latitude, Longitude, Nama Sekolah
         def find_column(df, possible_names):
             for name in df.columns:
                 if str(name).strip().lower() in [n.lower() for n in possible_names]:
@@ -57,12 +57,12 @@ else:
 
         lat_col = find_column(df, ["Latitude", "Lat", "Lattitude", "Y"])
         lon_col = find_column(df, ["Longitude", "Lon", "Long", "X"])
-        nama_col = find_column(df, ["Nama", "Sekolah", "Name"])
+        nama_col = find_column(df, ["Nama Sekolah", "Nama", "Sekolah", "Name"])
 
         if lat_col and lon_col:
             if nama_col:
                 markers = list(zip(df[nama_col], df[lat_col], df[lon_col]))
-            else:
+            else:  # fallback jika kolom Nama Sekolah tidak ada
                 markers = [(f"Sekolah {i+1}", lat, lon) for i, (lat, lon) in enumerate(zip(df[lat_col], df[lon_col]))]
 
             st.sidebar.success(f"Berhasil membaca {len(markers)} titik sekolah dari Excel")

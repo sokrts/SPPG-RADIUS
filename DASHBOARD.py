@@ -2,7 +2,8 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 import pandas as pd
-from geopy.distance import geodesic  # <-- Tambahan
+from geopy.distance import geodesic
+import math  # <-- untuk cek NaN
 
 st.set_page_config(
     page_title="Dashboard Peta",
@@ -46,14 +47,27 @@ else:
     uploaded_file = st.sidebar.file_uploader("Upload file Excel (harus ada kolom Latitude & Longitude)", type=["xlsx"])
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file)
-        if "Latitude" in df.columns and "Longitude" in df.columns:
-            if "Nama" in df.columns:
-                markers = list(zip(df["Nama"], df["Latitude"], df["Longitude"]))
+
+        # Mendeteksi kolom Latitude, Longitude, Nama
+        def find_column(df, possible_names):
+            for name in df.columns:
+                if str(name).strip().lower() in [n.lower() for n in possible_names]:
+                    return name
+            return None
+
+        lat_col = find_column(df, ["Latitude", "Lat", "Lattitude", "Y"])
+        lon_col = find_column(df, ["Longitude", "Lon", "Long", "X"])
+        nama_col = find_column(df, ["Nama", "Sekolah", "Name"])
+
+        if lat_col and lon_col:
+            if nama_col:
+                markers = list(zip(df[nama_col], df[lat_col], df[lon_col]))
             else:
-                markers = [(f"Sekolah {i+1}", lat, lon) for i, (lat, lon) in enumerate(zip(df["Latitude"], df["Longitude"]))]
+                markers = [(f"Sekolah {i+1}", lat, lon) for i, (lat, lon) in enumerate(zip(df[lat_col], df[lon_col]))]
+
             st.sidebar.success(f"Berhasil membaca {len(markers)} titik sekolah dari Excel")
         else:
-            st.sidebar.error("File tidak memiliki kolom 'Latitude' dan 'Longitude'")
+            st.sidebar.error("File tidak memiliki kolom Latitude/Longitude yang valid")
 
 # ===================== TAMPILKAN PETA =====================
 if locations or markers:
@@ -91,8 +105,14 @@ if locations or markers:
         "lightgreen", "gray", "black", "lightgray"
     ]
 
+    # ===================== FILTER MARKER SEKOLAH =====================
+    valid_markers = []
+    for nama, lat, lon in markers:
+        if lat is not None and lon is not None and not (math.isnan(lat) or math.isnan(lon)):
+            valid_markers.append((nama, lat, lon))
+
     # Tambahkan marker sekolah
-    for idx, (nama, lat, lon) in enumerate(markers, start=1):
+    for idx, (nama, lat, lon) in enumerate(valid_markers, start=1):
         color = marker_colors[idx % len(marker_colors)]
         folium.Marker(
             location=[lat, lon],
@@ -103,9 +123,9 @@ if locations or markers:
     st_data = st_folium(m, height=800, use_container_width=True)
 
     # ===================== HITUNG JARAK =====================
-    if markers and locations:
+    if valid_markers and locations:
         results = []
-        for s_idx, (nama, s_lat, s_lon) in enumerate(markers, start=1):
+        for s_idx, (nama, s_lat, s_lon) in enumerate(valid_markers, start=1):
             for l_idx, (nama_sppg, l_lat, l_lon, l_radius) in enumerate(locations, start=1):
                 distance_m = geodesic((s_lat, s_lon), (l_lat, l_lon)).meters
                 status = "Dalam Radius" if distance_m <= l_radius else "Luar Radius"
@@ -118,16 +138,11 @@ if locations or markers:
                 })
 
         df_results = pd.DataFrame(results)
-
-        # DataFrame hanya dalam radius
         df_dalam_radius = df_results[df_results["Status"] == "Dalam Radius"].reset_index(drop=True)
-
-        # Hanya ambil kolom tertentu untuk tabel kedua
         df_dalam_radius = df_dalam_radius[["Sekolah", "SPPG", "Jarak (m)"]]
 
-        # Tampilkan di Streamlit
-        st.subheader("")
+        st.subheader("Semua Jarak Sekolah - SPPG")
         st.dataframe(df_results, use_container_width=True)
 
-        st.subheader("")
+        st.subheader("Sekolah Dalam Radius SPPG")
         st.dataframe(df_dalam_radius, use_container_width=True)

@@ -30,7 +30,7 @@ if input_mode_sppg == "Manual":
                                          key=f"rad_loc_{i}")
         locations.append((nama_sppg, lat, lon, radius))
 else:
-    uploaded_file_sppg = st.sidebar.file_uploader("Upload file Excel SPPG (Nama, Latitude, Longitude, Radius)", type=["xlsx"])
+    uploaded_file_sppg = st.sidebar.file_uploader("Upload file Excel SPPG (Nama Yayasan, Latitude, Longitude, Radius (M))", type=["xlsx"])
     if uploaded_file_sppg is not None:
         df_sppg = pd.read_excel(uploaded_file_sppg)
 
@@ -183,3 +183,4 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+

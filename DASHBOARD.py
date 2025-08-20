@@ -3,28 +3,27 @@ import folium
 from streamlit_folium import st_folium
 import pandas as pd
 from geopy.distance import geodesic
-import math 
+import math
 
 st.set_page_config(
     page_title="Dashboard Peta",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
+st.sidebar.image("BLUE.png", width=150)
 st.sidebar.title("SETTING")
 
 # ===================== RADIUS SPPG =====================
-st.sidebar.subheader("RADIUS SPPG")
-
 locations = []
 jumlah_titik = st.sidebar.number_input("Jumlah SPPG", min_value=1, max_value=10, value=1)
 
 for i in range(jumlah_titik):
-    st.sidebar.markdown(f"**SPPG {i+1}**")
-    nama_sppg = st.sidebar.text_input(f"Nama SPPG {i+1}", value=f"SPPG {i+1}", key=f"nama_sppg_{i}")
-    lat = st.sidebar.number_input(f"Latitude SPPG {i+1}", value=-2.059939, format="%.6f", key=f"lat_loc_{i}")
-    lon = st.sidebar.number_input(f"Longitude SPPG {i+1}", value=106.1004404, format="%.6f", key=f"lon_loc_{i}")
-    radius = st.sidebar.number_input(f"Radius {i+1} (meter)", min_value=100, max_value=20000, value=6000, key=f"rad_loc_{i}")
+    st.sidebar.markdown(f"**SPPG {i + 1}**")
+    nama_sppg = st.sidebar.text_input(f"Nama SPPG {i + 1}", value=f"SPPG {i + 1}", key=f"nama_sppg_{i}")
+    lat = st.sidebar.number_input(f"Latitude SPPG {i + 1}", value=-2.059939, format="%.6f", key=f"lat_loc_{i}")
+    lon = st.sidebar.number_input(f"Longitude SPPG {i + 1}", value=106.1004404, format="%.6f", key=f"lon_loc_{i}")
+    radius = st.sidebar.number_input(f"Radius {i + 1} (meter)", min_value=100, max_value=20000, value=6000,
+                                     key=f"rad_loc_{i}")
     locations.append((nama_sppg, lat, lon, radius))
 
 # ===================== TITIK SEKOLAH =====================
@@ -37,10 +36,11 @@ if input_mode == "Manual":
     jumlah_marker = st.sidebar.number_input("Jumlah TITIK Sekolah", min_value=0, max_value=20, value=0)
 
     for i in range(jumlah_marker):
-        st.sidebar.markdown(f"**Sekolah {i+1}**")
-        nama_sekolah = st.sidebar.text_input(f"Nama Sekolah {i+1}", value=f"Sekolah {i+1}", key=f"nama_sekolah_{i}")
-        lat = st.sidebar.number_input(f"Latitude Sekolah {i+1}", value=-2.059939, format="%.6f", key=f"lat_mark_{i}")
-        lon = st.sidebar.number_input(f"Longitude Sekolah {i+1}", value=106.1004404, format="%.6f", key=f"lon_mark_{i}")
+        st.sidebar.markdown(f"**Sekolah {i + 1}**")
+        nama_sekolah = st.sidebar.text_input(f"Nama Sekolah {i + 1}", value=f"Sekolah {i + 1}", key=f"nama_sekolah_{i}")
+        lat = st.sidebar.number_input(f"Latitude Sekolah {i + 1}", value=-2.059939, format="%.6f", key=f"lat_mark_{i}")
+        lon = st.sidebar.number_input(f"Longitude Sekolah {i + 1}", value=106.1004404, format="%.6f",
+                                      key=f"lon_mark_{i}")
         markers.append((nama_sekolah, lat, lon))
 
 else:
@@ -48,12 +48,13 @@ else:
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file)
 
-        # Mendeteksi kolom Latitude, Longitude, Nama Sekolah
+
         def find_column(df, possible_names):
             for name in df.columns:
                 if str(name).strip().lower() in [n.lower() for n in possible_names]:
                     return name
             return None
+
 
         lat_col = find_column(df, ["Latitude", "Lat", "Lattitude", "Y"])
         lon_col = find_column(df, ["Longitude", "Lon", "Long", "X"])
@@ -63,7 +64,7 @@ else:
             if nama_col:
                 markers = list(zip(df[nama_col], df[lat_col], df[lon_col]))
             else:  # fallback jika kolom Nama Sekolah tidak ada
-                markers = [(f"Sekolah {i+1}", lat, lon) for i, (lat, lon) in enumerate(zip(df[lat_col], df[lon_col]))]
+                markers = [(f"Sekolah {i + 1}", lat, lon) for i, (lat, lon) in enumerate(zip(df[lat_col], df[lon_col]))]
 
             st.sidebar.success(f"Berhasil membaca {len(markers)} titik sekolah dari Excel")
         else:
@@ -79,7 +80,7 @@ if locations or markers:
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
     circle_colors = [
-        "red","cadetblue", "orange",
+        "red", "cadetblue", "orange",
     ]
 
     # Tambahkan lingkaran SPPG
@@ -97,7 +98,7 @@ if locations or markers:
 
     marker_colors = [
         "red", "darkblue",
-    
+
     ]
 
     # ===================== FILTER MARKER SEKOLAH =====================
@@ -142,12 +143,10 @@ if locations or markers:
         st.subheader("Sekolah Dalam Radius SPPG")
         st.dataframe(df_dalam_radius, use_container_width=True)
 
-# Tambahkan di akhir script Streamlit kamu
 st.markdown(
     """
     <style>
     .watermark {
-        position: fixed;
         bottom: 5px;
         right: 10px;
         color: gray;
@@ -162,5 +161,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 

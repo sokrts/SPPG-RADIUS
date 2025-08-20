@@ -80,7 +80,7 @@ if locations or markers:
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
     circle_colors = [
-        "red", "cadetblue", "orange",
+      "cadetblue",
     ]
 
     # Tambahkan lingkaran SPPG
@@ -97,7 +97,7 @@ if locations or markers:
         ).add_to(m)
 
     marker_colors = [
-        "red", "darkblue",
+        "red",
 
     ]
 
@@ -150,7 +150,7 @@ st.markdown(
         bottom: 5px;
         right: 10px;
         color: gray;
-        font-size: 12px;
+        font-size: 20px;
         opacity: 0.6;
         z-index: 1000;
     }
@@ -161,6 +161,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 

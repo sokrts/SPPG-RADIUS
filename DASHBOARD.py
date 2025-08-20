@@ -4,6 +4,8 @@ from streamlit_folium import st_folium
 import pandas as pd
 from geopy.distance import geodesic
 import math  # <-- untuk cek NaN
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 
 st.set_page_config(
     page_title="Dashboard Peta",
@@ -78,14 +80,13 @@ if locations or markers:
 
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
+    # Tambahkan lingkaran SPPG
     circle_colors = [
         "red", "blue", "green", "purple", "orange",
         "darkred", "lightred", "beige", "darkblue", "darkgreen",
         "cadetblue", "darkpurple", "pink", "lightblue",
         "lightgreen", "gray", "black", "lightgray"
     ]
-
-    # Tambahkan lingkaran SPPG
     for idx, (nama_sppg, lat, lon, radius) in enumerate(locations, start=1):
         color = circle_colors[idx % len(circle_colors)]
         folium.Circle(
@@ -98,27 +99,27 @@ if locations or markers:
             popup=f"{nama_sppg} - Radius {radius} m"
         ).add_to(m)
 
-    marker_colors = [
-        "red", "blue", "green", "purple", "orange",
-        "darkred", "lightred", "beige", "darkblue", "darkgreen",
-        "cadetblue", "darkpurple", "white", "pink", "lightblue",
-        "lightgreen", "gray", "black", "lightgray"
-    ]
-
     # ===================== FILTER MARKER SEKOLAH =====================
     valid_markers = []
     for nama, lat, lon in markers:
         if lat is not None and lon is not None and not (math.isnan(lat) or math.isnan(lon)):
             valid_markers.append((nama, lat, lon))
 
-    # Tambahkan marker sekolah
-    for idx, (nama, lat, lon) in enumerate(valid_markers, start=1):
-        color = marker_colors[idx % len(marker_colors)]
-        folium.Marker(
-            location=[lat, lon],
-            popup=f"{nama}",
-            icon=folium.Icon(color=color, icon="")
-        ).add_to(m)
+    # ===================== MARKER SEKOLAH DENGAN GRADIEN =====================
+    if valid_markers:
+        cmap = cm.get_cmap('RdYlBu', len(valid_markers))  # Gradien RdYlBu
+        for idx, (nama, lat, lon) in enumerate(valid_markers, start=0):
+            rgba = cmap(idx)
+            color_hex = mcolors.to_hex(rgba)
+            folium.CircleMarker(
+                location=[lat, lon],
+                radius=7,
+                popup=f"{nama}",
+                color=color_hex,
+                fill=True,
+                fill_color=color_hex,
+                fill_opacity=0.9
+            ).add_to(m)
 
     st_data = st_folium(m, height=800, use_container_width=True)
 

@@ -79,7 +79,7 @@ if locations or markers:
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
     circle_colors = [
-        "red","darkpurple", "orange",
+        "red","cadetblue", "orange",
     ]
 
     # Tambahkan lingkaran SPPG
@@ -141,3 +141,4 @@ if locations or markers:
 
         st.subheader("Sekolah Dalam Radius SPPG")
         st.dataframe(df_dalam_radius, use_container_width=True)
+

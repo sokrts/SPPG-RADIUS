@@ -104,7 +104,7 @@ if locations or markers:
 
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
-    circle_colors = ["cadetblue", "red", "green", "purple", "orange", "darkblue", "darkred"]
+    circle_colors = ["cadetblue", "green","darkblue", "darkred"]
 
     legend_items = []  # untuk simpan legend otomatis
 
@@ -206,3 +206,4 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+

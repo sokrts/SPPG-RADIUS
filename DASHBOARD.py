@@ -104,7 +104,9 @@ if locations or markers:
 
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
-    circle_colors = ["cadetblue", "red", "green"]
+    circle_colors = ["cadetblue", "red", "green", "purple", "orange", "darkblue", "darkred"]
+
+    legend_items = []  # untuk simpan legend otomatis
 
     # Tambahkan lingkaran SPPG
     for idx, (nama_sppg, lat, lon, radius) in enumerate(locations, start=1):
@@ -118,6 +120,8 @@ if locations or markers:
             fill_opacity=0.3,
             popup=f"{nama_sppg} - Radius {radius} m"
         ).add_to(m)
+
+        legend_items.append((nama_sppg, color))  # simpan utk legenda
 
     marker_colors = ["red"]
 
@@ -135,6 +139,25 @@ if locations or markers:
             popup=f"{nama}",
             icon=folium.Icon(color=color, icon="")
         ).add_to(m)
+
+    # ===================== LEGENDA RADIUS =====================
+    legend_html = """
+    <div style="
+        position: fixed; 
+        bottom: 50px; left: 50px; width: 200px; height: auto; 
+        background-color: white;
+        border:2px solid grey; 
+        z-index:9999; 
+        font-size:14px;
+        padding: 10px;
+        ">
+    <b>Legenda Radius</b><br>
+    """
+    for nama_sppg, color in legend_items:
+        legend_html += f'<i style="background:{color}; width: 12px; height: 12px; float:left; margin-right:8px; opacity:0.6"></i>{nama_sppg}<br>'
+    legend_html += "</div>"
+
+    m.get_root().html.add_child(folium.Element(legend_html))
 
     st_data = st_folium(m, height=800, use_container_width=True)
 
@@ -183,5 +206,3 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-

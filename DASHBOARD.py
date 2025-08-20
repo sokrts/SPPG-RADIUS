@@ -104,7 +104,7 @@ if locations or markers:
 
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
-    circle_colors = ["cadetblue"]
+    circle_colors = ["cadetblue", "green"]
 
     # Tambahkan lingkaran SPPG
     for idx, (nama_sppg, lat, lon, radius) in enumerate(locations, start=1):
@@ -183,5 +183,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 

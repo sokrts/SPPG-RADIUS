@@ -142,4 +142,25 @@ if locations or markers:
         st.subheader("Sekolah Dalam Radius SPPG")
         st.dataframe(df_dalam_radius, use_container_width=True)
 
+# Tambahkan di akhir script Streamlit kamu
+st.markdown(
+    """
+    <style>
+    .watermark {
+        position: fixed;
+        bottom: 5px;
+        right: 10px;
+        color: gray;
+        font-size: 12px;
+        opacity: 0.6;
+        z-index: 1000;
+    }
+    </style>
+    <div class="watermark">
+        © 2025 Hypo Krates
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 

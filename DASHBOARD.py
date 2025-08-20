@@ -14,23 +14,51 @@ st.sidebar.image("BLUE.png", width=150)
 st.sidebar.title("SETTING")
 
 # ===================== RADIUS SPPG =====================
+st.sidebar.subheader("RADIUS SPPG")
 locations = []
-jumlah_titik = st.sidebar.number_input("Jumlah SPPG", min_value=1, max_value=10, value=1)
+input_mode_sppg = st.sidebar.radio("Pilih cara input SPPG:", ["Manual", "Upload Excel"], key="input_sppg")
 
-for i in range(jumlah_titik):
-    st.sidebar.markdown(f"**SPPG {i + 1}**")
-    nama_sppg = st.sidebar.text_input(f"Nama SPPG {i + 1}", value=f"SPPG {i + 1}", key=f"nama_sppg_{i}")
-    lat = st.sidebar.number_input(f"Latitude SPPG {i + 1}", value=-2.059939, format="%.6f", key=f"lat_loc_{i}")
-    lon = st.sidebar.number_input(f"Longitude SPPG {i + 1}", value=106.1004404, format="%.6f", key=f"lon_loc_{i}")
-    radius = st.sidebar.number_input(f"Radius {i + 1} (meter)", min_value=100, max_value=20000, value=6000,
-                                     key=f"rad_loc_{i}")
-    locations.append((nama_sppg, lat, lon, radius))
+if input_mode_sppg == "Manual":
+    jumlah_titik = st.sidebar.number_input("Jumlah SPPG", min_value=1, max_value=10, value=1)
+
+    for i in range(jumlah_titik):
+        st.sidebar.markdown(f"**SPPG {i + 1}**")
+        nama_sppg = st.sidebar.text_input(f"Nama SPPG {i + 1}", value=f"SPPG {i + 1}", key=f"nama_sppg_{i}")
+        lat = st.sidebar.number_input(f"Latitude SPPG {i + 1}", value=-2.059939, format="%.6f", key=f"lat_loc_{i}")
+        lon = st.sidebar.number_input(f"Longitude SPPG {i + 1}", value=106.1004404, format="%.6f", key=f"lon_loc_{i}")
+        radius = st.sidebar.number_input(f"Radius {i + 1} (meter)", min_value=100, max_value=20000, value=6000,
+                                         key=f"rad_loc_{i}")
+        locations.append((nama_sppg, lat, lon, radius))
+else:
+    uploaded_file_sppg = st.sidebar.file_uploader("Upload file Excel SPPG (Nama, Latitude, Longitude, Radius)", type=["xlsx"])
+    if uploaded_file_sppg is not None:
+        df_sppg = pd.read_excel(uploaded_file_sppg)
+
+        def find_column(df, possible_names):
+            for name in df.columns:
+                if str(name).strip().lower() in [n.lower() for n in possible_names]:
+                    return name
+            return None
+
+        lat_col = find_column(df_sppg, ["Latitude", "Lat", "Y"])
+        lon_col = find_column(df_sppg, ["Longitude", "Lon", "Long", "X"])
+        nama_col = find_column(df_sppg, ["Nama SPPG", "Nama", "Name"])
+        radius_col = find_column(df_sppg, ["Radius", "Radius (m)", "Rad"])
+
+        if lat_col and lon_col and radius_col:
+            if nama_col:
+                locations = list(zip(df_sppg[nama_col], df_sppg[lat_col], df_sppg[lon_col], df_sppg[radius_col]))
+            else:
+                locations = [(f"SPPG {i + 1}", lat, lon, rad) 
+                             for i, (lat, lon, rad) in enumerate(zip(df_sppg[lat_col], df_sppg[lon_col], df_sppg[radius_col]))]
+            st.sidebar.success(f"Berhasil membaca {len(locations)} titik SPPG dari Excel")
+        else:
+            st.sidebar.error("File tidak memiliki kolom Latitude/Longitude/Radius yang valid")
 
 # ===================== TITIK SEKOLAH =====================
 st.sidebar.subheader("TITIK SEKOLAH")
-
 markers = []
-input_mode = st.sidebar.radio("Pilih cara input titik sekolah:", ["Manual", "Upload Excel"])
+input_mode = st.sidebar.radio("Pilih cara input titik sekolah:", ["Manual", "Upload Excel"], key="input_marker")
 
 if input_mode == "Manual":
     jumlah_marker = st.sidebar.number_input("Jumlah TITIK Sekolah", min_value=0, max_value=20, value=0)
@@ -39,8 +67,7 @@ if input_mode == "Manual":
         st.sidebar.markdown(f"**Sekolah {i + 1}**")
         nama_sekolah = st.sidebar.text_input(f"Nama Sekolah {i + 1}", value=f"Sekolah {i + 1}", key=f"nama_sekolah_{i}")
         lat = st.sidebar.number_input(f"Latitude Sekolah {i + 1}", value=-2.059939, format="%.6f", key=f"lat_mark_{i}")
-        lon = st.sidebar.number_input(f"Longitude Sekolah {i + 1}", value=106.1004404, format="%.6f",
-                                      key=f"lon_mark_{i}")
+        lon = st.sidebar.number_input(f"Longitude Sekolah {i + 1}", value=106.1004404, format="%.6f", key=f"lon_mark_{i}")
         markers.append((nama_sekolah, lat, lon))
 
 else:
@@ -48,13 +75,11 @@ else:
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file)
 
-
         def find_column(df, possible_names):
             for name in df.columns:
                 if str(name).strip().lower() in [n.lower() for n in possible_names]:
                     return name
             return None
-
 
         lat_col = find_column(df, ["Latitude", "Lat", "Lattitude", "Y"])
         lon_col = find_column(df, ["Longitude", "Lon", "Long", "X"])
@@ -63,7 +88,7 @@ else:
         if lat_col and lon_col:
             if nama_col:
                 markers = list(zip(df[nama_col], df[lat_col], df[lon_col]))
-            else:  # fallback jika kolom Nama Sekolah tidak ada
+            else:
                 markers = [(f"Sekolah {i + 1}", lat, lon) for i, (lat, lon) in enumerate(zip(df[lat_col], df[lon_col]))]
 
             st.sidebar.success(f"Berhasil membaca {len(markers)} titik sekolah dari Excel")
@@ -79,9 +104,7 @@ if locations or markers:
 
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
-    circle_colors = [
-      "cadetblue",
-    ]
+    circle_colors = ["cadetblue"]
 
     # Tambahkan lingkaran SPPG
     for idx, (nama_sppg, lat, lon, radius) in enumerate(locations, start=1):
@@ -96,12 +119,9 @@ if locations or markers:
             popup=f"{nama_sppg} - Radius {radius} m"
         ).add_to(m)
 
-    marker_colors = [
-        "red",
+    marker_colors = ["red"]
 
-    ]
-
-    # ===================== FILTER MARKER SEKOLAH =====================
+    # Filter marker sekolah valid
     valid_markers = []
     for nama, lat, lon in markers:
         if lat is not None and lon is not None and not (math.isnan(lat) or math.isnan(lon)):
@@ -143,6 +163,7 @@ if locations or markers:
         st.subheader("Sekolah Dalam Radius SPPG")
         st.dataframe(df_dalam_radius, use_container_width=True)
 
+# ===================== WATERMARK =====================
 st.markdown(
     """
     <style>
@@ -162,10 +183,3 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-
-
-
-
-
-

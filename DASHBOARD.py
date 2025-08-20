@@ -4,7 +4,6 @@ from streamlit_folium import st_folium
 import pandas as pd
 from geopy.distance import geodesic
 import math
-import requests
 
 st.set_page_config(
     page_title="Dashboard Peta",
@@ -23,32 +22,39 @@ for i in range(jumlah_titik):
     nama_sppg = st.sidebar.text_input(f"Nama SPPG {i + 1}", value=f"SPPG {i + 1}", key=f"nama_sppg_{i}")
     lat = st.sidebar.number_input(f"Latitude SPPG {i + 1}", value=-2.059939, format="%.6f", key=f"lat_loc_{i}")
     lon = st.sidebar.number_input(f"Longitude SPPG {i + 1}", value=106.1004404, format="%.6f", key=f"lon_loc_{i}")
-    radius = st.sidebar.number_input(f"Radius {i + 1} (meter)", min_value=100, max_value=20000, value=6000, key=f"rad_loc_{i}")
+    radius = st.sidebar.number_input(f"Radius {i + 1} (meter)", min_value=100, max_value=20000, value=6000,
+                                     key=f"rad_loc_{i}")
     locations.append((nama_sppg, lat, lon, radius))
 
 # ===================== TITIK SEKOLAH =====================
 st.sidebar.subheader("TITIK SEKOLAH")
+
 markers = []
 input_mode = st.sidebar.radio("Pilih cara input titik sekolah:", ["Manual", "Upload Excel"])
 
 if input_mode == "Manual":
     jumlah_marker = st.sidebar.number_input("Jumlah TITIK Sekolah", min_value=0, max_value=20, value=0)
+
     for i in range(jumlah_marker):
         st.sidebar.markdown(f"**Sekolah {i + 1}**")
         nama_sekolah = st.sidebar.text_input(f"Nama Sekolah {i + 1}", value=f"Sekolah {i + 1}", key=f"nama_sekolah_{i}")
         lat = st.sidebar.number_input(f"Latitude Sekolah {i + 1}", value=-2.059939, format="%.6f", key=f"lat_mark_{i}")
-        lon = st.sidebar.number_input(f"Longitude Sekolah {i + 1}", value=106.1004404, format="%.6f", key=f"lon_mark_{i}")
+        lon = st.sidebar.number_input(f"Longitude Sekolah {i + 1}", value=106.1004404, format="%.6f",
+                                      key=f"lon_mark_{i}")
         markers.append((nama_sekolah, lat, lon))
+
 else:
     uploaded_file = st.sidebar.file_uploader("Upload file Excel (harus ada kolom Latitude & Longitude)", type=["xlsx"])
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file)
+
 
         def find_column(df, possible_names):
             for name in df.columns:
                 if str(name).strip().lower() in [n.lower() for n in possible_names]:
                     return name
             return None
+
 
         lat_col = find_column(df, ["Latitude", "Lat", "Lattitude", "Y"])
         lon_col = find_column(df, ["Longitude", "Lon", "Long", "X"])
@@ -57,25 +63,12 @@ else:
         if lat_col and lon_col:
             if nama_col:
                 markers = list(zip(df[nama_col], df[lat_col], df[lon_col]))
-            else:
-                markers = [(f"Sekolah {i+1}", lat, lon) for i, (lat, lon) in enumerate(zip(df[lat_col], df[lon_col]))]
+            else:  # fallback jika kolom Nama Sekolah tidak ada
+                markers = [(f"Sekolah {i + 1}", lat, lon) for i, (lat, lon) in enumerate(zip(df[lat_col], df[lon_col]))]
+
             st.sidebar.success(f"Berhasil membaca {len(markers)} titik sekolah dari Excel")
         else:
             st.sidebar.error("File tidak memiliki kolom Latitude/Longitude yang valid")
-
-# ===================== FUNGSI ESTIMASI WAKTU =====================
-def get_travel_time_osrm(lon1, lat1, lon2, lat2):
-    """Menghitung estimasi waktu tempuh mobil menggunakan OSRM (detik)."""
-    url = f"http://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=false"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            if data["routes"]:
-                return data["routes"][0]["duration"]  # detik
-    except:
-        pass
-    return None
 
 # ===================== TAMPILKAN PETA =====================
 if locations or markers:
@@ -86,19 +79,29 @@ if locations or markers:
 
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="OpenStreetMap")
 
+    circle_colors = [
+      "cadetblue",
+    ]
+
     # Tambahkan lingkaran SPPG
     for idx, (nama_sppg, lat, lon, radius) in enumerate(locations, start=1):
+        color = circle_colors[idx % len(circle_colors)]
         folium.Circle(
             location=[lat, lon],
             radius=radius,
-            color="cadetblue",
+            color=color,
             fill=True,
-            fill_color="cadetblue",
+            fill_color=color,
             fill_opacity=0.3,
             popup=f"{nama_sppg} - Radius {radius} m"
         ).add_to(m)
 
-    # Filter marker sekolah
+    marker_colors = [
+        "red",
+
+    ]
+
+    # ===================== FILTER MARKER SEKOLAH =====================
     valid_markers = []
     for nama, lat, lon in markers:
         if lat is not None and lon is not None and not (math.isnan(lat) or math.isnan(lon)):
@@ -106,40 +109,33 @@ if locations or markers:
 
     # Tambahkan marker sekolah
     for idx, (nama, lat, lon) in enumerate(valid_markers, start=1):
+        color = marker_colors[idx % len(marker_colors)]
         folium.Marker(
             location=[lat, lon],
             popup=f"{nama}",
-            icon=folium.Icon(color="red", icon="")
+            icon=folium.Icon(color=color, icon="")
         ).add_to(m)
 
     st_data = st_folium(m, height=800, use_container_width=True)
 
-    # ===================== HITUNG JARAK & WAKTU =====================
+    # ===================== HITUNG JARAK =====================
     if valid_markers and locations:
         results = []
         for s_idx, (nama, s_lat, s_lon) in enumerate(valid_markers, start=1):
             for l_idx, (nama_sppg, l_lat, l_lon, l_radius) in enumerate(locations, start=1):
                 distance_m = geodesic((s_lat, s_lon), (l_lat, l_lon)).meters
                 status = "Dalam Radius" if distance_m <= l_radius else "Luar Radius"
-                # Estimasi waktu tempuh OSRM
-                time_est_sec = get_travel_time_osrm(s_lon, s_lat, l_lon, l_lat)  # catatan: (lon, lat)
-                if time_est_sec is not None:
-                    time_est_min = round(time_est_sec / 60, 1)
-                else:
-                    time_est_min = "Tidak tersedia"
-
                 results.append({
                     "Sekolah": nama,
                     "SPPG": nama_sppg,
                     "Jarak (m)": round(distance_m, 2),
                     "Radius (m)": l_radius,
-                    "Status": status,
-                    "Estimasi Waktu (menit)": time_est_min
+                    "Status": status
                 })
 
         df_results = pd.DataFrame(results)
         df_dalam_radius = df_results[df_results["Status"] == "Dalam Radius"].reset_index(drop=True)
-        df_dalam_radius = df_dalam_radius[["Sekolah", "SPPG", "Jarak (m)", "Estimasi Waktu (menit)"]]
+        df_dalam_radius = df_dalam_radius[["Sekolah", "SPPG", "Jarak (m)"]]
 
         st.subheader("Semua Jarak Sekolah - SPPG")
         st.dataframe(df_results, use_container_width=True)
@@ -147,7 +143,6 @@ if locations or markers:
         st.subheader("Sekolah Dalam Radius SPPG")
         st.dataframe(df_dalam_radius, use_container_width=True)
 
-# ===================== WATERMARK =====================
 st.markdown(
     """
     <style>
@@ -167,3 +162,10 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+
+
+
+
+
+

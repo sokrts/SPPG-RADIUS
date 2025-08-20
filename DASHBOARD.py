@@ -96,7 +96,7 @@ if locations or markers:
         ).add_to(m)
 
     marker_colors = [
-        "red", "darkblue","orange",
+        "red", "darkblue",
     
     ]
 
@@ -141,4 +141,5 @@ if locations or markers:
 
         st.subheader("Sekolah Dalam Radius SPPG")
         st.dataframe(df_dalam_radius, use_container_width=True)
+
 
